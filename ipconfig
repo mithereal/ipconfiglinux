@@ -1,0 +1,24 @@
+#!/bin/bash
+nics="$(ifconfig | grep  'encap:Ethernet'  | cut -d' ' -f1)"
+OS=$(lsb_release -si)
+ARCH=$(uname -m | sed 's/x86_//;s/i[3-6]86/32/')
+VER=$(lsb_release -sr)
+xternalip=$(wget -q -O /dev/stdout http://checkip.dyndns.org/ | cut -d : -f 2- | cut -d \< -f -1)
+	echo
+	echo $OS $ARCH $VER
+
+for n in $nics
+do
+   myIP=$(ifconfig $n | grep 'inet addr:'| grep -v '127.0.0.1' | cut -d: -f2 | awk '{ print $1}') 
+	myMask=$(ifconfig $n | grep 'Mask:'| grep -v '127.0.0.1' | cut -d: -f4 | awk '{ print $1}')
+	myGateway=$(netstat -rn | grep 'default' | awk '{ print $2}')
+	route=$(route -n | grep 'UG[ \t]' | awk '{print $2}')
+	echo
+	echo  [$n]
+	echo  IP Address     ..................................     $myIP 
+	echo Subnet Mask     .................................   $myMask
+	echo Default Gateway ............................. $route
+	
+done
+echo External IP ................................. $xternalip
+echo
