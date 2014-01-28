@@ -7,6 +7,6 @@ instructions: clone the repo
 
 sudo chmod +x ipconfig
 
-sudo cp ipconfig /usr/local/bin
+sudo cp ipconfig /usr/local/bin/.
 
 ipconfig
