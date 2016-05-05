@@ -1,24 +1,42 @@
 #!/bin/bash
-nics="$(ifconfig | grep  'encap:Ethernet'  | cut -d' ' -f1)"
+OIFS=$IFS;
+IFS=" ";
+
+nicstring="$(find /sys/class/net -maxdepth 1  -printf '%P\n')"
+ns_string="$(cat /etc/resolv.conf | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')"
+nics=($nicstring);
+ns=$ns_string
+IFS=$OIFS;
+
 OS=$(lsb_release -si)
 ARCH=$(uname -m | sed 's/x86_//;s/i[3-6]86/32/')
 VER=$(lsb_release -sr)
-xternalip=$(wget -q -O /dev/stdout http://checkip.dyndns.org/ | cut -d : -f 2- | cut -d \< -f -1)
+##xternalip=$(wget -q -O /dev/stdout http://checkip.dyndns.org/ | cut -d : -f 2- | cut -d \< -f -1)
+xternalip=$(wget -q -O /dev/stdout https://api.ipify.org )
 	echo
 	echo $OS $ARCH $VER
-
+	
 for n in $nics
 do
-   myIP=$(ifconfig $n | grep 'inet addr:'| grep -v '127.0.0.1' | cut -d: -f2 | awk '{ print $1}') 
-	myMask=$(ifconfig $n | grep 'Mask:'| grep -v '127.0.0.1' | cut -d: -f4 | awk '{ print $1}')
+   myIP=$(ip addr show $n | grep 'inet '| awk '{ print $2}') 
+	myMask=$(ifconfig $n | grep 'netmask '| awk '{ print $4}')
 	myGateway=$(netstat -rn | grep 'default' | awk '{ print $2}')
-	route=$(route -n | grep 'UG[ \t]' | awk '{print $2}')
+	route=$(route -n | grep 'UG[ \t]' |grep $n | awk '{print $2}')
 	echo
 	echo  [$n]
 	echo  IP Address     ..................................     $myIP 
 	echo Subnet Mask     .................................   $myMask
+	if [ "$n" != 'lo' ]
+	then
 	echo Default Gateway ............................. $route
-	
+	fi
 done
+echo
+echo [Name Servers]
+for s in $ns
+do
+  echo "               .............................. $s"
+done
+echo
 echo External IP ................................. $xternalip
 echo
